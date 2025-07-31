@@ -28,7 +28,11 @@ func (h *Handler) StateMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc 
 }
 
 func (h *Handler) Start(c telebot.Context) error {
-	return c.Send(helloMessage)
+	return c.Send(helloMessage, mainMenu)
+}
+
+func (h *Handler) CreateCalendar(c telebot.Context) error {
+	return c.Send("create event", createEventMenu)
 }
 
 func Init(st *statestorage.StateStorage) *Handler {

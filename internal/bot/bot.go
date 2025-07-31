@@ -3,7 +3,7 @@ package bot
 import (
 	"fmt"
 	"log/slog"
-	"telecalendar/internal/bot/handler"
+	hndl "telecalendar/internal/bot/handler"
 	"telecalendar/internal/config"
 	"telecalendar/internal/statestorage"
 	"time"
@@ -32,11 +32,14 @@ func Init(cfg *config.Config, logger *slog.Logger) (*Bot, error) {
 	}
 
 	st := statestorage.Init()
-	handler := handler.Init(st)
+	handler := hndl.Init(st)
+
+	tgbot.SetCommands(commands)
 
 	tgbot.Use(handler.StateMiddleware)
 
 	tgbot.Handle("/start", handler.Start)
+	tgbot.Handle(&hndl.CreateCalendarBtn, handler.CreateCalendar)
 
 	bot := &Bot{
 		tgbot: tgbot,
