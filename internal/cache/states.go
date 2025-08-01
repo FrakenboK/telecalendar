@@ -1,7 +1,7 @@
 package cache
 
 var (
-	initState = &UserState{
+	initState = UserState{
 		State:    StartState,
 		TempData: make(map[string]interface{}),
 	}

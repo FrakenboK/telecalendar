@@ -34,26 +34,29 @@ func Init(cfg *config.Config) *StateStorage {
 	}
 }
 
-func (s *StateStorage) GetState(userID int64) (*UserState, error) {
+func (s *StateStorage) GetState(userID int64) (UserState, error) {
 	key := fmt.Sprintf("user:%d:state", userID)
 	data, err := s.client.Get(s.ctx, key).Result()
 	if err == redis.Nil {
-		s.SetState(userID, initState)
-		return deepcopy.Copy(initState).(*UserState), nil
+		return s.initState(userID)
 	} else if err != nil {
-		return nil, err
+		return UserState{}, err
 	}
 
 	var state UserState
 	err = json.Unmarshal([]byte(data), &state)
 	if err != nil {
-		return nil, err
+		return UserState{}, err
 	}
 
-	return &state, nil
+	return state, nil
 }
 
-func (s *StateStorage) SetState(userID int64, state *UserState) error {
+func (s *StateStorage) initState(userId int64) (UserState, error) {
+	return deepcopy.Copy(initState).(UserState), s.SetState(userId, initState)
+}
+
+func (s *StateStorage) SetState(userID int64, state UserState) error {
 	key := fmt.Sprintf("user:%d:state", userID)
 	data, err := json.Marshal(state)
 	if err != nil {

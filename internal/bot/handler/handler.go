@@ -62,14 +62,15 @@ func (hm *HandlerManager) User(ctx telebot.Context) error {
 }
 
 func (hm *HandlerManager) CreateCalendar(ctx telebot.Context) error {
-	userState := ctx.Get("state").(*cache.UserState)
+	userState := ctx.Get("state").(cache.UserState)
 	userState.State = cache.CreateCalendarState
 	hm.cache.SetState(ctx.Sender().ID, userState)
 	return ctx.Send("Enter calendar name")
 }
 
 func (hm *HandlerManager) OnText(ctx telebot.Context) error {
-	userState := ctx.Get("state").(*cache.UserState)
+	userState := ctx.Get("state").(cache.UserState)
+	user := ctx.Get("user").(models.User)
 
 	switch userState.State {
 	case cache.CreateCalendarState:
@@ -77,6 +78,17 @@ func (hm *HandlerManager) OnText(ctx telebot.Context) error {
 		hm.cache.SetState(ctx.Sender().ID, userState)
 
 		text := ctx.Text()
+
+		calendar := models.Calendar{
+			Name:  text,
+			Users: []models.User{user},
+		}
+
+		if err := hm.db.Create(&calendar).Error; err != nil {
+			hm.log.Error("failed to create calendar", "error", err.Error())
+			return ctx.Send(errorMessage)
+		}
+
 		return ctx.Send(fmt.Sprintf("Calendar created: %s", text))
 
 	default:

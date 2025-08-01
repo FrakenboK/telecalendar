@@ -13,8 +13,7 @@ type User struct {
 
 type Calendar struct {
 	gorm.Model
-	Name   string `gorm:"unique;not null"`
-	UserID uint   `gorm:"not null"`
+	Name string `gorm:"unique;not null"`
 
 	Users  []User  `gorm:"many2many:users_calendars"`
 	Events []Event `gorm:"many2many:calendars_events"`
