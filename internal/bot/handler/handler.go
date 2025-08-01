@@ -3,15 +3,15 @@ package handler
 import (
 	"fmt"
 	"log/slog"
+	"telecalendar/internal/cache"
 	"telecalendar/internal/database/models"
-	stateStorage "telecalendar/internal/statestorage"
 
 	"gopkg.in/telebot.v3"
 	"gorm.io/gorm"
 )
 
 type HandlerManager struct {
-	cache *stateStorage.StateStorage
+	cache *cache.StateStorage
 	log   *slog.Logger
 	db    *gorm.DB
 }
@@ -62,18 +62,18 @@ func (hm *HandlerManager) User(ctx telebot.Context) error {
 }
 
 func (hm *HandlerManager) CreateCalendar(ctx telebot.Context) error {
-	userState := ctx.Get("state").(*stateStorage.UserState)
-	userState.State = stateStorage.CreateCalendarState
+	userState := ctx.Get("state").(*cache.UserState)
+	userState.State = cache.CreateCalendarState
 	hm.cache.SetState(ctx.Sender().ID, userState)
 	return ctx.Send("Enter calendar name")
 }
 
 func (hm *HandlerManager) OnText(ctx telebot.Context) error {
-	userState := ctx.Get("state").(*stateStorage.UserState)
+	userState := ctx.Get("state").(*cache.UserState)
 
 	switch userState.State {
-	case stateStorage.CreateCalendarState:
-		userState.State = stateStorage.StartState
+	case cache.CreateCalendarState:
+		userState.State = cache.StartState
 		hm.cache.SetState(ctx.Sender().ID, userState)
 
 		text := ctx.Text()
@@ -86,7 +86,7 @@ func (hm *HandlerManager) OnText(ctx telebot.Context) error {
 }
 
 func Init(
-	cache *stateStorage.StateStorage,
+	cache *cache.StateStorage,
 	logger *slog.Logger,
 	db *gorm.DB,
 ) *HandlerManager {

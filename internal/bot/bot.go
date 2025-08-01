@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 	handler "telecalendar/internal/bot/handler"
+	"telecalendar/internal/cache"
 	"telecalendar/internal/config"
 	"telecalendar/internal/database"
-	stateStorage "telecalendar/internal/statestorage"
 	"time"
 
 	"gopkg.in/telebot.v3"
@@ -32,7 +32,7 @@ func Init(cfg *config.Config, logger *slog.Logger) (*Bot, error) {
 		return nil, fmt.Errorf("failed to run telegram bot: %w", err)
 	}
 
-	cache := stateStorage.Init(cfg)
+	cache := cache.Init(cfg)
 	db, err := database.Init(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("database error: %w", err)

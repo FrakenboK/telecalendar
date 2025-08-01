@@ -1,4 +1,4 @@
-package statestorage
+package cache
 
 var (
 	initState = &UserState{

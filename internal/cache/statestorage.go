@@ -1,4 +1,4 @@
-package statestorage
+package cache
 
 import (
 	"context"
