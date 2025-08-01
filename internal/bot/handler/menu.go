@@ -9,11 +9,11 @@ var (
 	TodayCalendarBtn  = mainMenu.Text("Calendar for today")
 
 	// Create event menu
-	createEventMenu = &telebot.ReplyMarkup{ResizeKeyboard: true}
-	DisposableEvent = createEventMenu.Text("Disposable event")
-	EveryDayEvent   = createEventMenu.Text("Every day event")
-	EveryWeekEvent  = createEventMenu.Text("Every week event")
-	EveryYearEvent  = createEventMenu.Text("Every year event")
+	createEventMenu    = &telebot.ReplyMarkup{ResizeKeyboard: true}
+	DisposableEventBtn = createEventMenu.Text("Disposable event")
+	EveryDayEventBtn   = createEventMenu.Text("Every day event")
+	EveryWeekEventBtn  = createEventMenu.Text("Every week event")
+	EveryYearEventBtn  = createEventMenu.Text("Every year event")
 )
 
 func init() {
@@ -23,7 +23,7 @@ func init() {
 	)
 
 	createEventMenu.Reply(
-		createEventMenu.Row(DisposableEvent, EveryDayEvent),
-		createEventMenu.Row(EveryWeekEvent, EveryYearEvent),
+		createEventMenu.Row(DisposableEventBtn, EveryDayEventBtn),
+		createEventMenu.Row(EveryWeekEventBtn, EveryYearEventBtn),
 	)
 }

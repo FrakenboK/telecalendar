@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"telecalendar/internal/config"
 	"time"
 
 	"github.com/mohae/deepcopy"
@@ -20,10 +21,10 @@ type StateStorage struct {
 	ctx    context.Context
 }
 
-func Init() *StateStorage {
+func Init(cfg *config.Config) *StateStorage {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
+		Addr:     fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port),
+		Password: cfg.Redis.Password,
 		DB:       0,
 	})
 

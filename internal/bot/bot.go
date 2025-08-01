@@ -3,9 +3,10 @@ package bot
 import (
 	"fmt"
 	"log/slog"
-	hndl "telecalendar/internal/bot/handler"
+	handler "telecalendar/internal/bot/handler"
 	"telecalendar/internal/config"
-	"telecalendar/internal/statestorage"
+	"telecalendar/internal/database"
+	stateStorage "telecalendar/internal/statestorage"
 	"time"
 
 	"gopkg.in/telebot.v3"
@@ -23,7 +24,7 @@ func (b *Bot) Run() {
 
 func Init(cfg *config.Config, logger *slog.Logger) (*Bot, error) {
 	tgbot, err := telebot.NewBot(telebot.Settings{
-		Token:  cfg.Token,
+		Token:  cfg.Telegram.Token,
 		Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
 	})
 
@@ -31,15 +32,34 @@ func Init(cfg *config.Config, logger *slog.Logger) (*Bot, error) {
 		return nil, fmt.Errorf("failed to run telegram bot: %w", err)
 	}
 
-	st := statestorage.Init()
-	handler := hndl.Init(st)
+	cache := stateStorage.Init(cfg)
+	db, err := database.Init(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("database error: %w", err)
+	}
 
+	handlerManager := handler.Init(
+		cache,
+		logger,
+		db,
+	)
+
+	// Commands docs
 	tgbot.SetCommands(commands)
 
-	tgbot.Use(handler.StateMiddleware)
+	// Middleware
+	tgbot.Use(handlerManager.StateMiddleware)
+	tgbot.Use(handlerManager.UserMiddleware)
 
-	tgbot.Handle("/start", handler.Start)
-	tgbot.Handle(&hndl.CreateCalendarBtn, handler.CreateCalendar)
+	// Commands
+	tgbot.Handle("/start", handlerManager.Start)
+	tgbot.Handle("/user", handlerManager.User)
+
+	// Buttons
+	tgbot.Handle(&handler.CreateCalendarBtn, handlerManager.CreateCalendar)
+
+	// Text
+	tgbot.Handle(telebot.OnText, handlerManager.OnText)
 
 	bot := &Bot{
 		tgbot: tgbot,

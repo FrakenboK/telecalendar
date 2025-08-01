@@ -3,40 +3,96 @@ package handler
 import (
 	"fmt"
 	"log/slog"
-	"telecalendar/internal/statestorage"
+	"telecalendar/internal/database/models"
+	stateStorage "telecalendar/internal/statestorage"
 
 	"gopkg.in/telebot.v3"
+	"gorm.io/gorm"
 )
 
-type Handler struct {
-	st  *statestorage.StateStorage
-	log *slog.Logger
+type HandlerManager struct {
+	cache *stateStorage.StateStorage
+	log   *slog.Logger
+	db    *gorm.DB
 }
 
-func (h *Handler) StateMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
-	return func(c telebot.Context) error {
-		userID := c.Sender().ID
-		state, err := h.st.GetState(userID)
+func (hm *HandlerManager) StateMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
+	return func(ctx telebot.Context) error {
+		userID := ctx.Sender().ID
+		state, err := hm.cache.GetState(userID)
 		if err != nil {
-			h.log.Error(fmt.Sprintf("failed to get state: %s", err.Error()))
-			return c.Send(errorMessage)
+			hm.log.Error(fmt.Sprintf("failed to get state: %s", err.Error()))
+			return ctx.Send(errorMessage)
 		}
 
-		c.Set("state", state)
-		return next(c)
+		ctx.Set("state", state)
+		return next(ctx)
 	}
 }
 
-func (h *Handler) Start(c telebot.Context) error {
-	return c.Send(helloMessage, mainMenu)
+func (hm *HandlerManager) UserMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
+	return func(ctx telebot.Context) error {
+		userID := ctx.Sender().ID
+
+		var user models.User
+		result := hm.db.Where("telegram_id = ?", userID).First(&user)
+
+		if result.Error == gorm.ErrRecordNotFound {
+			user = models.User{
+				TelegramId: userID,
+				Username:   ctx.Sender().Username,
+			}
+			if err := hm.db.Create(&user).Error; err != nil {
+				hm.log.Error("failed to create user", "error", err.Error())
+				return ctx.Send(errorMessage)
+			}
+		}
+		ctx.Set("user", user)
+		return next(ctx)
+	}
 }
 
-func (h *Handler) CreateCalendar(c telebot.Context) error {
-	return c.Send("create event", createEventMenu)
+func (hm *HandlerManager) Start(ctx telebot.Context) error {
+	return ctx.Send(helloMessage, mainMenu)
 }
 
-func Init(st *statestorage.StateStorage) *Handler {
-	return &Handler{
-		st: st,
+func (hm *HandlerManager) User(ctx telebot.Context) error {
+	user := ctx.Get("user").(models.User)
+	return ctx.Send(fmt.Sprintf("%d %s", user.ID, user.Username))
+}
+
+func (hm *HandlerManager) CreateCalendar(ctx telebot.Context) error {
+	userState := ctx.Get("state").(*stateStorage.UserState)
+	userState.State = stateStorage.CreateCalendarState
+	hm.cache.SetState(ctx.Sender().ID, userState)
+	return ctx.Send("Enter calendar name")
+}
+
+func (hm *HandlerManager) OnText(ctx telebot.Context) error {
+	userState := ctx.Get("state").(*stateStorage.UserState)
+
+	switch userState.State {
+	case stateStorage.CreateCalendarState:
+		userState.State = stateStorage.StartState
+		hm.cache.SetState(ctx.Sender().ID, userState)
+
+		text := ctx.Text()
+		return ctx.Send(fmt.Sprintf("Calendar created: %s", text))
+
+	default:
+		return hm.Start(ctx)
+	}
+
+}
+
+func Init(
+	cache *stateStorage.StateStorage,
+	logger *slog.Logger,
+	db *gorm.DB,
+) *HandlerManager {
+	return &HandlerManager{
+		cache: cache,
+		log:   logger,
+		db:    db,
 	}
 }

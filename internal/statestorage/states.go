@@ -2,11 +2,12 @@ package statestorage
 
 var (
 	initState = &UserState{
-		State:    startState,
+		State:    StartState,
 		TempData: make(map[string]interface{}),
 	}
 )
 
 const (
-	startState = "start"
+	StartState          = "START"
+	CreateCalendarState = "CREATE_CALENDAR"
 )
