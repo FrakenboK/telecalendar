@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"telecalendar/internal/config"
+	"telecalendar/internal/database/models"
 	"time"
 
 	"github.com/mohae/deepcopy"
@@ -12,26 +13,14 @@ import (
 )
 
 type UserState struct {
-	State    string                 `json:"state"`
-	TempData map[string]interface{} `json:"temp_data"`
+	State    StateType     `json:"state"`
+	Event    *models.Event `json:"event,omitempty"`
+	Calendar string        `json:"calendar_name,omitempty"`
 }
 
 type StateStorage struct {
 	client *redis.Client
 	ctx    context.Context
-}
-
-func Init(cfg *config.Config) *StateStorage {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port),
-		Password: cfg.Redis.Password,
-		DB:       0,
-	})
-
-	return &StateStorage{
-		client: rdb,
-		ctx:    context.Background(),
-	}
 }
 
 func (s *StateStorage) GetState(userID int64) (UserState, error) {
@@ -53,7 +42,7 @@ func (s *StateStorage) GetState(userID int64) (UserState, error) {
 }
 
 func (s *StateStorage) initState(userId int64) (UserState, error) {
-	return deepcopy.Copy(initState).(UserState), s.SetState(userId, initState)
+	return deepcopy.Copy(InitState).(UserState), s.SetState(userId, InitState)
 }
 
 func (s *StateStorage) SetState(userID int64, state UserState) error {
@@ -69,4 +58,17 @@ func (s *StateStorage) SetState(userID int64, state UserState) error {
 func (s *StateStorage) ClearState(userID int64) error {
 	key := fmt.Sprintf("user:%d:state", userID)
 	return s.client.Del(s.ctx, key).Err()
+}
+
+func Init(cfg *config.Config) *StateStorage {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port),
+		Password: cfg.Redis.Password,
+		DB:       0,
+	})
+
+	return &StateStorage{
+		client: rdb,
+		ctx:    context.Background(),
+	}
 }

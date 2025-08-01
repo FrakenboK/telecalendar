@@ -3,6 +3,8 @@ package handler
 import (
 	"fmt"
 	"log/slog"
+	"telecalendar/internal/bot/handler/menu"
+	"telecalendar/internal/bot/handler/output"
 	"telecalendar/internal/cache"
 	"telecalendar/internal/database/models"
 
@@ -22,7 +24,7 @@ func (hm *HandlerManager) StateMiddleware(next telebot.HandlerFunc) telebot.Hand
 		state, err := hm.cache.GetState(userID)
 		if err != nil {
 			hm.log.Error(fmt.Sprintf("failed to get state: %s", err.Error()))
-			return ctx.Send(errorMessage)
+			return ctx.Send(output.ErrorMessage)
 		}
 
 		ctx.Set("state", state)
@@ -35,7 +37,11 @@ func (hm *HandlerManager) UserMiddleware(next telebot.HandlerFunc) telebot.Handl
 		userID := ctx.Sender().ID
 
 		var user models.User
-		result := hm.db.Where("telegram_id = ?", userID).First(&user)
+		// TODO: optimization
+		result := hm.db.Where("telegram_id = ?", userID).
+			Preload("Calendars").
+			Preload("Calendars.Events").
+			First(&user)
 
 		if result.Error == gorm.ErrRecordNotFound {
 			user = models.User{
@@ -44,7 +50,7 @@ func (hm *HandlerManager) UserMiddleware(next telebot.HandlerFunc) telebot.Handl
 			}
 			if err := hm.db.Create(&user).Error; err != nil {
 				hm.log.Error("failed to create user", "error", err.Error())
-				return ctx.Send(errorMessage)
+				return ctx.Send(output.ErrorMessage)
 			}
 		}
 		ctx.Set("user", user)
@@ -53,19 +59,56 @@ func (hm *HandlerManager) UserMiddleware(next telebot.HandlerFunc) telebot.Handl
 }
 
 func (hm *HandlerManager) Start(ctx telebot.Context) error {
-	return ctx.Send(helloMessage, mainMenu)
+	hm.cache.SetState(ctx.Sender().ID, cache.InitState)
+	return ctx.Send(output.HelloMessage, menu.MainMenu)
 }
 
-func (hm *HandlerManager) User(ctx telebot.Context) error {
+func (hm *HandlerManager) ListCalendars(ctx telebot.Context) error {
 	user := ctx.Get("user").(models.User)
-	return ctx.Send(fmt.Sprintf("%d %s", user.ID, user.Username))
+	calendars := user.Calendars
+
+	return ctx.Send(
+		output.ListCalendars(calendars),
+	)
 }
 
 func (hm *HandlerManager) CreateCalendar(ctx telebot.Context) error {
 	userState := ctx.Get("state").(cache.UserState)
 	userState.State = cache.CreateCalendarState
 	hm.cache.SetState(ctx.Sender().ID, userState)
-	return ctx.Send("Enter calendar name")
+	return ctx.Send("*Enter calendar name*:") // TODO
+}
+
+func (hm *HandlerManager) CreateEvent(ctx telebot.Context) error {
+	user := ctx.Get("user").(models.User)
+	state := ctx.Get("state").(cache.UserState)
+
+	if len(user.Calendars) == 0 {
+		return ctx.Send(output.NeedCalendarMessage)
+	}
+	state.Event = &models.Event{}
+
+	if len(user.Calendars) == 1 {
+		state.State = cache.CreateEventType
+		state.Calendar = user.Calendars[0].Name
+		hm.cache.SetState(ctx.Sender().ID, state)
+		return ctx.Send(output.ChooseEventTypeMessage, menu.ChooseEventTypeEventMenu)
+	}
+	state.State = cache.CreateEventCalendar
+	hm.cache.SetState(ctx.Sender().ID, state)
+
+	return ctx.Send("") // TODO: buttons
+}
+
+func (hm *HandlerManager) ChooseDisposableEvent(ctx telebot.Context) error {
+	// user := ctx.Get("user").(models.User)
+	state := ctx.Get("state").(cache.UserState)
+
+	if state.State != cache.CreateEventType {
+		return hm.Start(ctx)
+	}
+
+	return ctx.Send("") // TODO: buttons
 }
 
 func (hm *HandlerManager) OnText(ctx telebot.Context) error {
@@ -77,19 +120,17 @@ func (hm *HandlerManager) OnText(ctx telebot.Context) error {
 		userState.State = cache.StartState
 		hm.cache.SetState(ctx.Sender().ID, userState)
 
-		text := ctx.Text()
-
 		calendar := models.Calendar{
-			Name:  text,
+			Name:  ctx.Text(),
 			Users: []models.User{user},
 		}
 
 		if err := hm.db.Create(&calendar).Error; err != nil {
 			hm.log.Error("failed to create calendar", "error", err.Error())
-			return ctx.Send(errorMessage)
+			return ctx.Send(output.ErrorMessage)
 		}
 
-		return ctx.Send(fmt.Sprintf("Calendar created: %s", text))
+		return ctx.Send(fmt.Sprintf("Calendar created: %s", ctx.Text()))
 
 	default:
 		return hm.Start(ctx)

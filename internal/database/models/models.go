@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -13,23 +15,29 @@ type User struct {
 
 type Calendar struct {
 	gorm.Model
-	Name string `gorm:"unique;not null"`
+	Name string `gorm:"unique;not null" json:"name,omitempty"`
 
 	Users  []User  `gorm:"many2many:users_calendars"`
 	Events []Event `gorm:"many2many:calendars_events"`
 }
 
 type Event struct {
-	gorm.Model
-	Name string    `gorm:"not null"`
-	Type EventType `gorm:"type:varchar(100);not null"`
+	ID   uint      `gorm:"primarykey" json:"-"`
+	Name string    `gorm:"not null" json:"name,omitempty"`
+	Type EventType `gorm:"type:varchar(100);not null" json:"type,omitempty"`
 
-	Calendars []Calendar `gorm:"many2many:calendars_events"`
+	Year  int `json:"year,omitempty"`
+	Month int `json:"month,omitempty"`
+	Day   int `json:"day,omitempty"`
 
-	Year  int
-	Month int
-	Day   int
+	Hour   int `json:"hour,omitempty"`
+	Minute int `json:"minute,omitempty"`
 
-	Hour   int
-	Minute int
+	Aggressiveness AggressivenessType `gorm:"type:varchar(100);not null" json:"aggressiveness,omitempty"`
+
+	Calendars []Calendar `gorm:"many2many:calendars_events,omitempty" json:"-"`
+
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }

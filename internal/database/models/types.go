@@ -9,3 +9,10 @@ var (
 	EveryMounth EventType = "EVERY_MOUNTH"
 	EveryYear   EventType = "EVERY_YEAR"
 )
+
+type AggressivenessType string
+
+var (
+	Aggressive AggressivenessType = "AGGRESSIVE"
+	Passive    AggressivenessType = "PASSIVE"
+)

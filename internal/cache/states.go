@@ -1,13 +1,19 @@
 package cache
 
-var (
-	initState = UserState{
-		State:    StartState,
-		TempData: make(map[string]interface{}),
-	}
-)
+type StateType string
 
-const (
-	StartState          = "START"
-	CreateCalendarState = "CREATE_CALENDAR"
+var (
+	InitState = UserState{
+		State: StartState,
+	}
+
+	StartState          StateType = "START"
+	CreateCalendarState StateType = "CREATE_CALENDAR"
+
+	CreateEventCalendar         StateType = "CREATE_EVENT_CHOOSE_CALENDAR"          // Choosing calendar
+	CreateEventName             StateType = "CREATE_EVENT_CHOOSE_NAME"              // Choosing name
+	CreateEventType             StateType = "CREATE_EVENT_CHOOSE_TYPE"              // Choosing type
+	CreateEventDate             StateType = "CREATE_EVENT_CHOOSE_DATE"              // Choosing date
+	CreateEventTime             StateType = "CREATE_EVENT_CHOOSE_TIME"              // Choosing time
+	CreateEventNotificationType StateType = "CREATE_EVENT_CHOOSE_NOTIFICATION_TYPE" // Choosing notification aggressiveness
 )

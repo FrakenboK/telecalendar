@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	handler "telecalendar/internal/bot/handler"
+	"telecalendar/internal/bot/handler/menu"
 	"telecalendar/internal/cache"
 	"telecalendar/internal/config"
 	"telecalendar/internal/database"
@@ -24,8 +25,9 @@ func (b *Bot) Run() {
 
 func Init(cfg *config.Config, logger *slog.Logger) (*Bot, error) {
 	tgbot, err := telebot.NewBot(telebot.Settings{
-		Token:  cfg.Telegram.Token,
-		Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
+		Token:     cfg.Telegram.Token,
+		Poller:    &telebot.LongPoller{Timeout: 10 * time.Second},
+		ParseMode: telebot.ModeMarkdownV2,
 	})
 
 	if err != nil {
@@ -53,10 +55,11 @@ func Init(cfg *config.Config, logger *slog.Logger) (*Bot, error) {
 
 	// Commands
 	tgbot.Handle("/start", handlerManager.Start)
-	tgbot.Handle("/user", handlerManager.User)
+	tgbot.Handle("/list", handlerManager.ListCalendars)
 
 	// Buttons
-	tgbot.Handle(&handler.CreateCalendarBtn, handlerManager.CreateCalendar)
+	tgbot.Handle(&menu.CreateCalendarBtn, handlerManager.CreateCalendar)
+	tgbot.Handle(&menu.CreateEventBtn, handlerManager.CreateEvent)
 
 	// Text
 	tgbot.Handle(telebot.OnText, handlerManager.OnText)
