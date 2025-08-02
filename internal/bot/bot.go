@@ -60,6 +60,7 @@ func Init(cfg *config.Config, logger *slog.Logger) (*Bot, error) {
 	// Buttons
 	tgbot.Handle(&menu.CreateCalendarBtn, handlerManager.CreateCalendar)
 	tgbot.Handle(&menu.CreateEventBtn, handlerManager.CreateEvent)
+	tgbot.Handle(&menu.DisposableEventBtn, handlerManager.ChooseDisposableEvent)
 
 	// Text
 	tgbot.Handle(telebot.OnText, handlerManager.OnText)

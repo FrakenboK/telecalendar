@@ -101,24 +101,24 @@ func (hm *HandlerManager) CreateEvent(ctx telebot.Context) error {
 }
 
 func (hm *HandlerManager) ChooseDisposableEvent(ctx telebot.Context) error {
-	// user := ctx.Get("user").(models.User)
 	state := ctx.Get("state").(cache.UserState)
-
 	if state.State != cache.CreateEventType {
 		return hm.Start(ctx)
 	}
+	state.State = cache.CreateEventName
+	state.Event.Type = models.Disposable
+	hm.cache.SetState(ctx.Sender().ID, state)
 
-	return ctx.Send("") // TODO: buttons
+	return ctx.Send(output.ChooseEventNameMessage, menu.BackMenu)
 }
 
 func (hm *HandlerManager) OnText(ctx telebot.Context) error {
-	userState := ctx.Get("state").(cache.UserState)
+	state := ctx.Get("state").(cache.UserState)
 	user := ctx.Get("user").(models.User)
 
-	switch userState.State {
+	switch state.State {
 	case cache.CreateCalendarState:
-		userState.State = cache.StartState
-		hm.cache.SetState(ctx.Sender().ID, userState)
+		hm.cache.SetState(ctx.Sender().ID, cache.InitState)
 
 		calendar := models.Calendar{
 			Name:  ctx.Text(),
@@ -131,6 +131,26 @@ func (hm *HandlerManager) OnText(ctx telebot.Context) error {
 		}
 
 		return ctx.Send(fmt.Sprintf("Calendar created: %s", ctx.Text()))
+
+	case cache.CreateEventName:
+		switch state.Event.Type {
+		case models.Disposable:
+			state.State = cache.CreateEventFullDate
+		default:
+			// TODO: log
+			ctx.Send("Unimplemented")
+			return hm.Start(ctx)
+		}
+
+		state.Event.Name = ctx.Text()
+		hm.cache.SetState(ctx.Sender().ID, state)
+		return ctx.Send(output.ChooseEventDateFullMessage)
+
+	case cache.CreateEventFullDate:
+		state.State = cache.CreateEventTime
+		// TODO: check and parse date
+		hm.cache.SetState(ctx.Sender().ID, state)
+		return ctx.Send("asd")
 
 	default:
 		return hm.Start(ctx)

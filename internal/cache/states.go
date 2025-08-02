@@ -10,10 +10,13 @@ var (
 	StartState          StateType = "START"
 	CreateCalendarState StateType = "CREATE_CALENDAR"
 
-	CreateEventCalendar         StateType = "CREATE_EVENT_CHOOSE_CALENDAR"          // Choosing calendar
-	CreateEventName             StateType = "CREATE_EVENT_CHOOSE_NAME"              // Choosing name
-	CreateEventType             StateType = "CREATE_EVENT_CHOOSE_TYPE"              // Choosing type
-	CreateEventDate             StateType = "CREATE_EVENT_CHOOSE_DATE"              // Choosing date
+	CreateEventCalendar StateType = "CREATE_EVENT_CHOOSE_CALENDAR" // Choosing calendar
+	CreateEventName     StateType = "CREATE_EVENT_CHOOSE_NAME"     // Choosing name
+	CreateEventType     StateType = "CREATE_EVENT_CHOOSE_TYPE"     // Choosing type
+
+	// Date inputs
+	CreateEventFullDate StateType = "CREATE_EVENT_CHOOSE_FULL_DATE"
+
 	CreateEventTime             StateType = "CREATE_EVENT_CHOOSE_TIME"              // Choosing time
 	CreateEventNotificationType StateType = "CREATE_EVENT_CHOOSE_NOTIFICATION_TYPE" // Choosing notification aggressiveness
 )
