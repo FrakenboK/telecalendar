@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"log/slog"
+	"telecalendar/internal/bot/date"
 	"telecalendar/internal/bot/handler/menu"
 	"telecalendar/internal/bot/handler/output"
 	"telecalendar/internal/cache"
@@ -64,6 +65,7 @@ func (hm *HandlerManager) Start(ctx telebot.Context) error {
 }
 
 func (hm *HandlerManager) ListCalendars(ctx telebot.Context) error {
+	hm.cache.SetState(ctx.Sender().ID, cache.InitState)
 	user := ctx.Get("user").(models.User)
 	calendars := user.Calendars
 
@@ -76,7 +78,7 @@ func (hm *HandlerManager) CreateCalendar(ctx telebot.Context) error {
 	userState := ctx.Get("state").(cache.UserState)
 	userState.State = cache.CreateCalendarState
 	hm.cache.SetState(ctx.Sender().ID, userState)
-	return ctx.Send("*Enter calendar name*:") // TODO
+	return ctx.Send(output.ChooseCalendarName)
 }
 
 func (hm *HandlerManager) CreateEvent(ctx telebot.Context) error {
@@ -97,7 +99,7 @@ func (hm *HandlerManager) CreateEvent(ctx telebot.Context) error {
 	state.State = cache.CreateEventCalendar
 	hm.cache.SetState(ctx.Sender().ID, state)
 
-	return ctx.Send("") // TODO: buttons
+	return ctx.Send("Unimplemented") // TODO: buttons
 }
 
 func (hm *HandlerManager) ChooseDisposableEvent(ctx telebot.Context) error {
@@ -147,8 +149,17 @@ func (hm *HandlerManager) OnText(ctx telebot.Context) error {
 		return ctx.Send(output.ChooseEventDateFullMessage)
 
 	case cache.CreateEventFullDate:
+		eventDate, err := date.GetFullDate(ctx.Text())
+		if err != nil {
+			ctx.Send(output.IncorrectDateMessage)
+			return ctx.Send(output.ChooseEventDateFullMessage)
+		}
 		state.State = cache.CreateEventTime
-		// TODO: check and parse date
+
+		state.Event.Year = eventDate.Year()
+		state.Event.Month = int(eventDate.Month())
+		state.Event.Day = eventDate.Day()
+
 		hm.cache.SetState(ctx.Sender().ID, state)
 		return ctx.Send("asd")
 

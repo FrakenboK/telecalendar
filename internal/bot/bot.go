@@ -55,7 +55,7 @@ func Init(cfg *config.Config, logger *slog.Logger) (*Bot, error) {
 
 	// Commands
 	tgbot.Handle("/start", handlerManager.Start)
-	tgbot.Handle("/list", handlerManager.ListCalendars)
+	tgbot.Handle("/calendars", handlerManager.ListCalendars)
 
 	// Buttons
 	tgbot.Handle(&menu.CreateCalendarBtn, handlerManager.CreateCalendar)

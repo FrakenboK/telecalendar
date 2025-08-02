@@ -1,5 +1,7 @@
 package date
 
+import "time"
+
 const (
 	Tomorrow = "tomorrow"
 	Today    = "today"
@@ -14,8 +16,17 @@ const (
 )
 
 var (
-	KnownDays = []string{
-		Tomorrow,
-		Today,
+	specialDays = map[string]time.Duration{
+		Tomorrow: time.Duration(time.Hour * 24),
+		Today:    0,
+	}
+	weekDays = map[string]int{
+		Monday:    1,
+		Tuesday:   2,
+		Wednesday: 3,
+		Thursday:  4,
+		Friday:    5,
+		Saturday:  6,
+		Sunday:    7,
 	}
 )
