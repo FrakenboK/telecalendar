@@ -2,7 +2,6 @@ package output
 
 const (
 	HelloMessage = "*Hello\\! I am a calendar bot\\!*"
-	ErrorMessage = "*Error occured, try again later*"
 
 	ChooseCalendarName = "*Enter calendar name*:"
 
@@ -28,6 +27,11 @@ const (
 
 	one  = ""
 	many = "s"
+
+	// Error messages
+	ErrorMessage  = "*Error occured, try again later*"
+	DatePassed    = "the date has already passed"
+	FailedToParse = "tailed to parse date"
 )
 
 var (
